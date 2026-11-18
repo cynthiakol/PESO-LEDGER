@@ -13,6 +13,9 @@ jobs:
         with:
           node-version: 20
       - run: npm install
-      - run: npx electron-builder --win --publish always
+      - run: npx electron-builder --win --publish never
+      - name: Upload installer to the release
+        shell: bash
+        run: gh release upload "${{ github.ref_name }}" dist/PesoLedger-Setup-*.exe --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
