@@ -2,6 +2,12 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0d121c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Peso Ledger</title>
 <style>
 :root{color-scheme:dark;--bg:#0d121c;--card:#151c2b;--line:#222c40;--tx:#f1f4fa;--mut:#8c97ad;--gold:#7c8cff;--pos:#4ade9b;--neg:#ff7b7b;--warn:#f5a524;--blue:#7c8cff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -193,4 +199,5 @@ else if(t.dataset.open){const v=r2(parseFloat(t.value));if(!(v>=0)){toast('Openi
 else if(t.dataset.bud){const v=r2(parseFloat(t.value));if(t.value!==''&&!(v>=0)){toast('Limit must be 0 or more.');return render()}commit(s=>{if(v>0)s.budgets[t.dataset.bud]=v;else delete s.budgets[t.dataset.bud]})}
 else if(t.id==='imf'&&t.files[0]){const fr=new FileReader();fr.onload=()=>doImport(fr.result);fr.readAsText(t.files[0]);t.value=''}});
 load().then(render);
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script></body></html>
