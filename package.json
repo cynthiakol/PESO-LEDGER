@@ -1,0 +1,30 @@
+{
+  "name": "peso-ledger",
+  "productName": "Peso Ledger",
+  "version": "1.0.0",
+  "description": "Personal finance tracker for salary, expenses, savings, investments and debts. Manual entry only.",
+  "author": "Peso Ledger",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.pesoledger.app",
+    "productName": "Peso Ledger",
+    "files": ["main.js", "index.html"],
+    "directories": { "buildResources": "build", "output": "dist" },
+    "win": { "target": "nsis", "icon": "build/icon.png" },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "PesoLedger-Setup-${version}.exe"
+    }
+  }
+}
