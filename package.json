@@ -1,7 +1,7 @@
 {
   "name": "peso-ledger",
   "productName": "Peso Ledger",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Personal finance tracker for salary, expenses, savings, investments and debts. Manual entry only.",
   "author": "Peso Ledger",
   "license": "MIT",
