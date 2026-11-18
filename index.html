@@ -38,6 +38,7 @@ th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);white-spac
 .note{border-color:var(--warn);color:var(--warn);margin-bottom:12px}
 dialog{background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:12px;width:min(440px,94vw);padding:18px}
 dialog::backdrop{background:#000a}
+[hidden]{display:none!important}
 label{display:block;margin:8px 0;color:var(--mut);font-size:12px}label>input,label>select,label>textarea{display:block;width:100%;margin-top:4px}
 .err{color:var(--neg);min-height:20px}
 #toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#252f45;border:1px solid var(--line);padding:10px 14px;border-radius:10px;max-width:92vw;display:none;z-index:99}
@@ -55,14 +56,15 @@ const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4)
 const CATS=['Health','Travel','Online Shopping','IRL Shopping','Thrifting','Electronics/PC Parts','Games/In-Game Purchases','Food','Cigarettes','Sports','Gifts','Subscriptions','Bills','Alcohol','Debts','Transportation'];
 const LBL={income:'Income',expense:'Expense',transfer:'Transfer',debt:'Debt payment'};
 const KL={main:'Salary account',spend:'Spending',savings:'Savings',invest:'Investment'};
-const def=()=>({v:1,accts:[['maya','Maya','main'],['gcash','GCash','spend'],['debit','Debit Card','spend'],['invest','Maya Investment','invest'],['sav','Savings','savings']].map(([id,name,kind])=>({id,name,kind,open:0})),cats:[...CATS],tx:[],debts:[],budgets:{}});
+const def=()=>({v:1,accts:[['maya','Maya','main'],['gcash','GCash','spend'],['debit','Debit Card','spend'],['cash','Cash','spend'],['invest','Maya Investment','invest'],['sav','Savings','savings']].map(([id,name,kind])=>({id,name,kind,open:0})),cats:[...CATS],tx:[],debts:[],budgets:{}});
 let S,mem=false,db,page=location.hash.slice(1),month=today().slice(0,7),F={q:'',type:'',acct:'',cat:'',from:'',to:''},lastErr='';
 const PG={dash:'Dashboard',accounts:'Accounts',tx:'Transactions',transfers:'Transfers',budgets:'Budgets',reports:'Reports',prefs:'Settings'};
 if(!PG[page])page='dash';
 
 /* storage: IndexedDB, whole state in one record */
 const idb=()=>new Promise((res,rej)=>{const q=indexedDB.open('peso-ledger',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
-async function load(){try{db=await idb();S=await new Promise((res,rej)=>{const q=db.transaction('kv').objectStore('kv').get('state');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}catch(e){mem=true}S=S||def()}
+const ensureCash=s=>{if(!s.accts.some(a=>a.id==='cash'))s.accts.splice(Math.min(3,s.accts.length),0,{id:'cash',name:'Cash',kind:'spend',open:0});return s};
+async function load(){try{db=await idb();S=await new Promise((res,rej)=>{const q=db.transaction('kv').objectStore('kv').get('state');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}catch(e){mem=true}S=ensureCash(S||def())}
 function save(){if(mem)return;try{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(S,'state');t.onerror=()=>toast('Could not save to browser storage.')}catch(e){toast('Could not save to browser storage.')}}
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',3800)}
 
@@ -108,8 +110,8 @@ return `<div class="row sp"><h2>Transactions</h2></div>${addBtns}<div class=card
 <label>Category<select data-f=cat>${o([['','All categories'],...S.cats.map(c=>[c,c])],F.cat)}</select></label>
 <label>From<input type=date data-f=from value="${F.from}"></label><label>To<input type=date data-f=to value="${F.to}"></label></div>
 <div class=row><span class=mut id=cnt>${l.length} shown</span><button data-a=clrf class=s>Clear filters</button></div></div><div class=card id=txl>${txTable(l)}</div>`},
-transfers(){const ids=Object.fromEntries(S.accts.map(a=>[a.kind==='main'?'m':a.id,a.id])),m='maya';const pre=[['maya','sav'],['maya','invest'],['maya','gcash'],['maya','debit'],['sav','maya'],['invest','maya'],['gcash','debit'],['debit','gcash']];
-const o=stats(month);return `<h2>Transfers</h2><p class=mut>Transfers move money between your own accounts. They are never counted as income or expenses.</p><div class=row><button class=p data-a=new data-t=transfer>New transfer</button></div>
+transfers(){const ids=Object.fromEntries(S.accts.map(a=>[a.kind==='main'?'m':a.id,a.id])),m='maya';const pre=[['maya','sav'],['maya','invest'],['maya','gcash'],['maya','debit'],['sav','maya'],['invest','maya'],['gcash','debit'],['debit','gcash'],['maya','cash'],['gcash','cash'],['debit','cash'],['cash','maya']];
+const o=stats(month);return `<h2>Transfers</h2><p class=mut>Transfers move money between your own accounts. They are never counted as income or expenses.</p><div class=row><button class=p data-a=new data-t=transfer>New transfer</button><button class=p data-a=new data-t=transfer data-from=maya data-to=cash>Withdraw cash</button></div>
 <div class=row style="margin:12px 0">${pre.map(([f,t])=>`<button class=s data-a=new data-t=transfer data-from="${f}" data-to="${t}">${esc(an(f))} → ${esc(an(t))}</button>`).join('')}</div>
 <h2>Transfer history</h2><div class=card>${txTable(sorted(S.tx.filter(t=>t.type==='transfer')))}</div>`},
 budgets(){const o=stats(month);return mh('Budgets')+`<p class=mut>Set a monthly limit per category. Leave blank for no limit. Warnings appear at 80% and when exceeded.</p><div class=grid>${S.cats.map(c=>{const l=S.budgets[c]||0,v=o.cat[c]||0,p=l?v/l*100:0;return `<div class=card><div class="row sp"><b>${esc(c)}</b><span class="${v>l&&l?'neg':'mut'}">${peso(v)}${l?' / '+peso(l):''}</span></div><div class="bar ${p>100?'o':p>=80?'w':''}" style="margin:8px 0"><i style="width:${Math.min(p,100)}%"></i></div><label style="margin:0">Monthly limit (₱)<input type=number min=0 step=0.01 value="${l||''}" data-bud="${esc(c)}"></label>${l&&v>l?`<div class=neg>Exceeded by ${peso(v-l)}</div>`:l&&p>=80?'<div style="color:var(--warn)">Close to the limit</div>':''}</div>`}).join('')}</div>`},
@@ -169,7 +171,7 @@ function valid(d){try{return d&&Array.isArray(d.accts)&&d.accts.length&&d.accts.
 async function doImport(txt){let d;try{d=JSON.parse(txt);d=d.data||d}catch(e){return toast('That is not valid backup text.')}
 if(!valid(d))return toast('Backup file is missing data or has invalid entries. Nothing was changed.');
 const b=bal(d);if(d.accts.some(a=>b[a.id]<-.004))return toast('Backup would leave an account below ₱0. Nothing was changed.');
-if(!await ask(`Replace all current data with this backup (${d.tx.length} transactions)?`))return;d.tx.forEach((t,i)=>t.ts=t.ts||i);S=d;save();render();toast('Backup imported.')}
+if(!await ask(`Replace all current data with this backup (${d.tx.length} transactions)?`))return;d.tx.forEach((t,i)=>t.ts=t.ts||i);S=ensureCash(d);save();render();toast('Backup imported.')}
 
 /* events */
 document.addEventListener('click',async e=>{const x=e.target.closest('[data-a]');if(!x)return;const a=x.dataset.a,d=x.dataset;
